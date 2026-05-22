@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { AppId, WindowState } from '../types';
+import { appMap } from '../config/apps';
 
 let nextZIndex = 10;
 
@@ -20,6 +21,7 @@ interface WindowStore {
   minimizeWindow: (id: string) => void;
   maximizeWindow: (id: string) => void;
   updateGeometry: (id: string, x: number, y: number, width: number, height: number) => void;
+  arrangeWindows: () => void;
 }
 
 export const useWindowStore = create<WindowStore>((set, get) => ({
@@ -27,6 +29,11 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   focusedWindowId: null,
 
   openApp: (appId) => {
+    const config = appMap[appId];
+    if (config?.mailto) {
+      window.location.href = `mailto:${config.mailto}`;
+      return;
+    }
     const existing = get().windows.find(w => w.appId === appId);
     if (existing) {
       if (existing.minimized) {
@@ -105,5 +112,28 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set(s => ({
       windows: s.windows.map(w => (w.id === id ? { ...w, x, y, width, height } : w)),
     }));
+  },
+
+  arrangeWindows: () => {
+    set(s => {
+      const visible = s.windows.filter(w => !w.minimized);
+      const w = Math.round(window.innerWidth * 0.55);
+      const h = Math.round(window.innerHeight * 0.60);
+      let zi = nextZIndex;
+      const arranged = visible.map((win, i) => ({
+        ...win,
+        x: 60 + i * 30,
+        y: 40 + i * 30,
+        width: w,
+        height: h,
+        maximized: false,
+        prevGeometry: undefined,
+        zIndex: ++zi,
+      }));
+      nextZIndex = zi;
+      return {
+        windows: s.windows.map(win => arranged.find(a => a.id === win.id) ?? win),
+      };
+    });
   },
 }));

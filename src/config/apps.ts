@@ -1,62 +1,80 @@
 import { lazy, type ComponentType } from 'react';
 import type { AppId } from '../types';
+import { contact } from './content';
+
+import notesIcon from '../assets/icons/notes_256x256x32.png';
+import folderIcon from '../assets/icons/folder_256x256x32.png';
+import contactsIcon from '../assets/icons/contacts_256x256x32.png';
+import mailIcon from '../assets/icons/mail_256x256x32.png';
+import pdfIcon from '../assets/icons/pdf_256x256x32.png';
+import systemPrefsIcon from '../assets/icons/system_preferences_256x256x32.png';
+import finderIcon from '../assets/icons/finder_256x256x32.png';
+import launchpadIcon from '../assets/icons/launchpad_256x256x32.png';
 
 export interface AppConfig {
   id: AppId;
   name: string;
   dockOrder: number;
-  iconBg: string;
-  iconColor: string;
-  component: ReturnType<typeof lazy<ComponentType>>;
+  icon: string;
+  component?: ReturnType<typeof lazy<ComponentType>>;
+  mailto?: string;
 }
 
 export const apps: AppConfig[] = [
   {
+    id: 'finder',
+    name: 'Finder',
+    dockOrder: 1,
+    icon: finderIcon,
+    component: lazy(() => import('../components/apps/FinderApp')),
+  },
+  {
+    id: 'launchpad',
+    name: 'Launchpad',
+    dockOrder: 2,
+    icon: launchpadIcon,
+    component: lazy(() => import('../components/apps/LaunchpadApp')),
+  },
+  {
     id: 'about',
     name: 'About',
-    dockOrder: 1,
-    iconBg: 'linear-gradient(135deg, #1a73e8 0%, #4285f4 100%)',
-    iconColor: '#ffffff',
+    dockOrder: 3,
+    icon: notesIcon,
     component: lazy(() => import('../components/apps/AboutApp')),
   },
   {
-    id: 'experience',
-    name: 'Experience',
-    dockOrder: 2,
-    iconBg: 'linear-gradient(135deg, #b5732d 0%, #d4944a 100%)',
-    iconColor: '#ffffff',
-    component: lazy(() => import('../components/apps/ExperienceApp')),
-  },
-  {
     id: 'projects',
-    name: 'Projects',
-    dockOrder: 3,
-    iconBg: 'linear-gradient(135deg, #0f9d58 0%, #34c77b 100%)',
-    iconColor: '#ffffff',
-    component: lazy(() => import('../components/apps/ProjectsApp')),
+    name: 'Work',
+    dockOrder: 4,
+    icon: folderIcon,
+    component: lazy(() => import('../components/apps/WorkApp')),
   },
   {
     id: 'contact',
     name: 'Contact',
-    dockOrder: 4,
-    iconBg: 'linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)',
-    iconColor: '#ffffff',
+    dockOrder: 5,
+    icon: contactsIcon,
     component: lazy(() => import('../components/apps/ContactApp')),
+  },
+  {
+    id: 'mail',
+    name: 'Mail',
+    dockOrder: 6,
+    icon: mailIcon,
+    mailto: contact.email,
   },
   {
     id: 'resume',
     name: 'Resume',
-    dockOrder: 5,
-    iconBg: 'linear-gradient(135deg, #ea4335 0%, #f97316 100%)',
-    iconColor: '#ffffff',
+    dockOrder: 7,
+    icon: pdfIcon,
     component: lazy(() => import('../components/apps/ResumeApp')),
   },
   {
     id: 'settings',
     name: 'Settings',
-    dockOrder: 6,
-    iconBg: 'linear-gradient(135deg, #636366 0%, #8e8e93 100%)',
-    iconColor: '#ffffff',
+    dockOrder: 8,
+    icon: systemPrefsIcon,
     component: lazy(() => import('../components/apps/SettingsApp')),
   },
 ];

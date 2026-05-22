@@ -1,18 +1,17 @@
-import { Moon, Sun } from 'lucide-react';
-import { useWindowStore } from '../../stores/windowStore';
-import { useThemeStore } from '../../stores/themeStore';
-import { useTimeOfDay } from '../../hooks/useTimeOfDay';
-import { appMap } from '../../config/apps';
+import { useState } from 'react';
+import { LeftMenus } from '../menubar/LeftMenus';
+import { BatteryStatus } from '../menubar/BatteryStatus';
+import { WifiMenu } from '../menubar/WifiMenu';
+import { TimeMachineMenu } from '../menubar/TimeMachineMenu';
+import { SpotlightButton } from '../menubar/Spotlight';
+import { ControlCenter } from '../menubar/ControlCenter';
+import { SiriButton } from '../menubar/SiriButton';
+import { ClockMenu } from '../menubar/ClockMenu';
+import { useBootStore } from '../../stores/bootStore';
 
 export function MenuBar() {
-  const focusedWindowId = useWindowStore(s => s.focusedWindowId);
-  const windows = useWindowStore(s => s.windows);
-  const isDark = useThemeStore(s => s.isDark);
-  const toggleDark = useThemeStore(s => s.toggleDark);
-  const { timeString } = useTimeOfDay();
-
-  const focused = windows.find(w => w.id === focusedWindowId);
-  const appName = focused ? appMap[focused.appId]?.name : 'Finder';
+  const [siriOpen, setSiriOpen] = useState(false);
+  const resetOnboarding = useBootStore(s => s.resetOnboarding);
 
   return (
     <div
@@ -22,46 +21,33 @@ export function MenuBar() {
         left: 0,
         right: 0,
         height: 'var(--menubar-height)',
-        background: 'var(--color-menubar-bg)',
+        background: 'linear-gradient(90deg, rgb(42,11,130) 0%, rgb(45,36,141) 20%, rgb(52,80,146) 40%, rgb(48,101,150) 60%, rgb(35,79,160) 80%, rgb(32,54,166) 100%)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--color-card-border)',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 14px',
+        padding: '0 4px 0 0',
         zIndex: 9000,
         fontFamily: 'var(--font-system)',
         fontSize: 13,
       }}
     >
-      {/* Left side */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1 }}>
-        <span style={{ fontSize: 16 }}>⌘</span>
-        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{appName}</span>
-      </div>
+      {/* Left side — Apple logo + context-aware app menus */}
+      <LeftMenus
+        openSiri={() => setSiriOpen(true)}
+        showOnboarding={resetOnboarding}
+      />
 
-      {/* Right side */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={toggleDark}
-          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--color-text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '2px 4px',
-            borderRadius: 4,
-          }}
-        >
-          {isDark ? <Sun size={14} /> : <Moon size={14} />}
-        </button>
-        <span style={{ color: 'var(--color-text-primary)', fontWeight: 500, minWidth: 44, textAlign: 'right' }}>
-          {timeString}
-        </span>
+      {/* Right side — status icons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+        <BatteryStatus />
+        <WifiMenu />
+        <TimeMachineMenu />
+        <SpotlightButton />
+        <ControlCenter />
+        <SiriButton open={siriOpen} onOpenChange={setSiriOpen} />
+        <ClockMenu />
       </div>
     </div>
   );

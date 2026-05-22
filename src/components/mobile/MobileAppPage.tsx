@@ -11,6 +11,7 @@ interface Props {
 
 export function MobileAppPage({ appId, onBack }: Props) {
   const app = appMap[appId];
+  if (!app.component) return null;
   const AppComponent = app.component;
 
   return (

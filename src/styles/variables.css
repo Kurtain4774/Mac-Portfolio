@@ -19,7 +19,11 @@
   --color-badge-bg: rgba(0, 0, 0, 0.06);
   --color-badge-text: #3c3c43;
   --color-accent: #007aff;
-  --color-icon-label: #1d1d1f;
+  --color-icon-label: #ffffff;
+  --color-dropdown-bg: rgba(245, 245, 245, 0.96);
+  --color-panel-bg: rgba(240, 240, 243, 0.94);
+  --color-item-hover-bg: #0066ff;
+  --color-item-hover-text: #ffffff;
 
   /* Shadows */
   --shadow-window: 0 4px 12px rgba(0, 0, 0, 0.08), 0 20px 40px rgba(0, 0, 0, 0.12);
@@ -52,6 +56,10 @@
   --color-badge-text: #d1d1d6;
   --color-accent: #0a84ff;
   --color-icon-label: #f5f5f7;
+  --color-dropdown-bg: rgba(40, 40, 43, 0.96);
+  --color-panel-bg: rgba(36, 36, 40, 0.96);
+  --color-item-hover-bg: #0a84ff;
+  --color-item-hover-text: #ffffff;
   --shadow-window: 0 4px 12px rgba(0, 0, 0, 0.30), 0 20px 40px rgba(0, 0, 0, 0.40);
   --shadow-window-focused: 0 8px 24px rgba(0, 0, 0, 0.40), 0 28px 56px rgba(0, 0, 0, 0.50);
 }

@@ -6,65 +6,32 @@ import { AppIcon } from '../shared/AppIcon';
 import { TrashPanel } from './TrashPanel';
 import { apps } from '../../config/apps';
 import type { AppId } from '../../types';
+import trashEmptyIcon from '../../assets/icons/trash_empty_256x256x32.png';
+import trashFullIcon from '../../assets/icons/trash_full_256x256x32.png';
 
 const ICON_BASE = 56;
 
 function TrashBinIcon({ hasItems, isOver }: { hasItems: boolean; isOver: boolean }) {
-  const lidColor = isOver ? 'rgba(255,200,200,0.95)' : 'rgba(230,230,230,0.92)';
-  const bodyColor = isOver ? 'rgba(255,180,180,0.9)' : 'rgba(210,210,210,0.85)';
-  const lineColor = isOver ? 'rgba(160,40,40,0.55)' : 'rgba(80,80,80,0.35)';
-
   return (
-    <div
+    <img
+      src={hasItems ? trashFullIcon : trashEmptyIcon}
+      alt="Trash"
+      width={ICON_BASE}
+      height={ICON_BASE}
       style={{
         width: ICON_BASE,
         height: ICON_BASE,
-        borderRadius: '22%',
-        background: isOver
-          ? 'linear-gradient(160deg, #ff6b6b 0%, #c0392b 100%)'
-          : hasItems
-            ? 'linear-gradient(160deg, #636e72 0%, #2d3436 100%)'
-            : 'linear-gradient(160deg, #74b9ff 0%, #0984e3 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: isOver
-          ? '0 2px 12px rgba(255,80,80,0.55), inset 0 1px 0 rgba(255,255,255,0.25)'
-          : '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.25)',
-        flexShrink: 0,
-        overflow: 'hidden',
-        position: 'relative',
-        transition: 'background 0.15s, box-shadow 0.15s',
+        objectFit: 'contain',
+        display: 'block',
+        pointerEvents: 'none',
+        filter: isOver
+          ? 'drop-shadow(0 2px 10px rgba(255,80,80,0.6)) brightness(0.85)'
+          : 'drop-shadow(0 2px 6px rgba(0,0,0,0.28))',
+        transform: isOver ? 'scale(1.08)' : 'none',
+        transition: 'transform 0.15s, filter 0.15s',
       }}
-    >
-      <svg width="32" height="34" viewBox="0 0 32 34" fill="none">
-        {/* Handle */}
-        <rect x="12" y="1" width="8" height="3" rx="1.5" fill={lidColor} />
-        {/* Lid */}
-        <rect x="4" y="5" width="24" height="4" rx="2" fill={lidColor} />
-        {/* Body */}
-        <path
-          d="M6 11 L7.5 30 C7.7 31.2 8.7 32 9.9 32 L22.1 32 C23.3 32 24.3 31.2 24.5 30 L26 11 Z"
-          fill={bodyColor}
-        />
-        {hasItems && (
-          <>
-            <line x1="12" y1="15" x2="11.5" y2="28" stroke={lineColor} strokeWidth="1.8" strokeLinecap="round" />
-            <line x1="16" y1="15" x2="16" y2="28" stroke={lineColor} strokeWidth="1.8" strokeLinecap="round" />
-            <line x1="20" y1="15" x2="20.5" y2="28" stroke={lineColor} strokeWidth="1.8" strokeLinecap="round" />
-          </>
-        )}
-      </svg>
-      {/* Glass shimmer */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(160deg, rgba(255,255,255,0.18) 0%, transparent 55%)',
-          pointerEvents: 'none',
-        }}
-      />
-    </div>
+      draggable={false}
+    />
   );
 }
 
@@ -182,7 +149,7 @@ export function Dock() {
                       width: 4,
                       height: 4,
                       borderRadius: '50%',
-                      background: 'var(--color-text-primary)',
+                      background: '#ffffff',
                       opacity: open || minimized ? 0.7 : 0,
                       transition: 'opacity 0.2s',
                       animation: minimized ? 'dock-bounce 0.6s ease infinite' : 'none',
@@ -267,7 +234,7 @@ export function Dock() {
                 width: 4,
                 height: 4,
                 borderRadius: '50%',
-                background: 'var(--color-text-primary)',
+                background: '#ffffff',
                 opacity: trashedApps.length > 0 ? 0.7 : 0,
                 transition: 'opacity 0.2s',
               }}

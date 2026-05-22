@@ -13,7 +13,7 @@ export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
       isDark: false,
-      wallpaper: 'dynamic',
+      wallpaper: 'sequoia',
       toggleDark: () => set(s => ({ isDark: !s.isDark })),
       setWallpaper: (wallpaper) => set({ wallpaper }),
     }),

@@ -120,11 +120,14 @@ interface IconsProps {
   onRenameConfirm: (appId: AppId, name: string) => void;
   onRenameCancel: () => void;
   onDesktopContextMenu: (x: number, y: number) => void;
+  onIconSelect: (appId: AppId, e: React.MouseEvent) => void;
+  onIconOpen: (appId: AppId) => void;
 }
 
 function DesktopGridIcons({
   positions, selectedIds, selRect, containerRef, renamingId,
   onMouseDown, onIconContextMenu, onRenameConfirm, onRenameCancel, onDesktopContextMenu,
+  onIconSelect, onIconOpen,
 }: IconsProps) {
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
@@ -172,6 +175,8 @@ function DesktopGridIcons({
             onContextMenu={e => onIconContextMenu(appId, e)}
             onRenameConfirm={name => onRenameConfirm(appId, name)}
             onRenameCancel={onRenameCancel}
+            onSelect={e => onIconSelect(appId, e)}
+            onOpen={() => onIconOpen(appId)}
           />
         );
       })}
@@ -328,6 +333,14 @@ export function DesktopGrid() {
     setSelectedIds(empty);
   };
 
+  const handleIconSelect = (appId: AppId, e: React.MouseEvent) => {
+    const next = (e.metaKey || e.ctrlKey)
+      ? new Set([...selectedIdsRef.current, appId])
+      : new Set<AppId>([appId]);
+    selectedIdsRef.current = next;
+    setSelectedIds(next);
+  };
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!marqueeRef.current || !containerRef.current) return;
@@ -355,6 +368,63 @@ export function DesktopGrid() {
       window.removeEventListener('mouseup', onMouseUp);
     };
   }, [computeSelected]);
+
+  // Clamp any icons that are stored at positions outside the visible desktop area.
+  // Runs once on mount (via rAF so the container has laid out) and on every resize.
+  useEffect(() => {
+    function clampPositions() {
+      const containerEl = containerRef.current;
+      if (!containerEl || containerEl.offsetWidth === 0) return;
+
+      const { positions: cur, moveIcons: doMove } = useDesktopStore.getState();
+      const maxCol = Math.floor((containerEl.offsetWidth  - CELL) / (CELL + GAP));
+      const maxRow = Math.floor((containerEl.offsetHeight - CELL) / (CELL + GAP));
+
+      const outOfBounds = cur.filter(p => p.col > maxCol || p.row > maxRow);
+      if (outOfBounds.length === 0) return;
+
+      const occupied = new Set(
+        cur
+          .filter(p => p.col <= maxCol && p.row <= maxRow)
+          .map(p => `${p.col},${p.row}`)
+      );
+
+      const moves: { appId: AppId; col: number; row: number }[] = [];
+      for (const p of outOfBounds) {
+        let col = Math.min(p.col, maxCol);
+        let row = Math.min(p.row, maxRow);
+
+        if (occupied.has(`${col},${row}`)) {
+          let placed = false;
+          outer: for (let r = 0; r <= maxRow; r++) {
+            for (let c = maxCol; c >= 0; c--) {
+              if (!occupied.has(`${c},${r}`)) {
+                col = c; row = r; placed = true;
+                break outer;
+              }
+            }
+          }
+          if (!placed) continue;
+        }
+
+        moves.push({ appId: p.appId, col, row });
+        occupied.add(`${col},${row}`);
+      }
+
+      if (moves.length > 0) doMove(moves);
+    }
+
+    let rafId = requestAnimationFrame(clampPositions);
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(clampPositions);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selRect = marquee ? {
     left: Math.min(marquee.startX, marquee.currentX),
@@ -398,6 +468,8 @@ export function DesktopGrid() {
         }}
         onRenameCancel={() => setRenamingId(null)}
         onDesktopContextMenu={(x, y) => setDesktopCtxMenu({ x, y })}
+        onIconSelect={handleIconSelect}
+        onIconOpen={appId => openApp(appId)}
       />
 
       {desktopCtxMenu && (

@@ -1,4 +1,4 @@
-export type AppId = 'about' | 'experience' | 'projects' | 'contact' | 'resume' | 'settings';
+export type AppId = 'about' | 'projects' | 'contact' | 'resume' | 'settings' | 'finder' | 'launchpad' | 'mail';
 
 export interface WindowState {
   id: string;

@@ -1,5 +1,5 @@
 import { AppIcon } from '../shared/AppIcon';
-import { apps } from '../../config/apps';
+import { apps, appMap } from '../../config/apps';
 import type { AppId } from '../../types';
 
 interface Props {
@@ -19,7 +19,14 @@ export function MobileAppGrid({ onOpen }: Props) {
       {apps.sort((a, b) => a.dockOrder - b.dockOrder).map(app => (
         <button
           key={app.id}
-          onClick={() => onOpen(app.id)}
+          onClick={() => {
+            const cfg = appMap[app.id];
+            if (cfg?.mailto) {
+              window.location.href = `mailto:${cfg.mailto}`;
+              return;
+            }
+            onOpen(app.id);
+          }}
           style={{
             background: 'none',
             border: 'none',

@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { AppIcon } from '../shared/AppIcon';
-import { useWindowStore } from '../../stores/windowStore';
 import { useDesktopStore } from '../../stores/desktopStore';
 import type { AppId } from '../../types';
 
@@ -27,6 +26,8 @@ interface Props {
   onContextMenu?: (e: React.MouseEvent) => void;
   onRenameConfirm?: (newName: string) => void;
   onRenameCancel?: () => void;
+  onSelect?: (e: React.MouseEvent) => void;
+  onOpen?: () => void;
 }
 
 export function DesktopIcon({
@@ -40,8 +41,9 @@ export function DesktopIcon({
   onContextMenu,
   onRenameConfirm,
   onRenameCancel,
+  onSelect,
+  onOpen,
 }: Props) {
-  const openApp = useWindowStore(s => s.openApp);
   const customNames = useDesktopStore(s => s.names);
   const displayName = customNames[appId] ?? name;
 
@@ -51,6 +53,21 @@ export function DesktopIcon({
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isRenaming) return;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      onOpen?.();
+    } else {
+      onSelect?.(e);
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+      }, 300);
+    }
+  };
 
   useEffect(() => {
     if (isRenaming && inputRef.current) {
@@ -82,15 +99,22 @@ export function DesktopIcon({
     zIndex: isDragging ? 100 : (groupDragTransform ? 99 : 1),
     transition: 'none',
     userSelect: 'none',
-    background: isSelected ? 'rgba(59, 130, 246, 0.28)' : 'transparent',
-    outline: isSelected ? '1.5px solid rgba(59, 130, 246, 0.45)' : 'none',
+    background: 'transparent',
+  };
+
+  const iconWrapperStyle: React.CSSProperties = {
+    borderRadius: '22%',
+    border: isSelected ? '1px solid rgba(180, 180, 195, 0.65)' : '1px solid transparent',
+    background: isSelected ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+    lineHeight: 0,
+    flexShrink: 0,
   };
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 500,
-    color: 'var(--color-icon-label)',
-    textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+    color: '#ffffff',
+    textShadow: isSelected ? 'none' : '0 1px 3px rgba(0,0,0,0.4)',
     textAlign: 'center',
     maxWidth: CELL - 8,
     overflow: 'hidden',
@@ -98,6 +122,9 @@ export function DesktopIcon({
     whiteSpace: 'nowrap',
     fontFamily: 'var(--font-system)',
     pointerEvents: 'none',
+    background: isSelected ? '#0058d0' : 'transparent',
+    borderRadius: isSelected ? 4 : 0,
+    padding: isSelected ? '1px 5px' : 0,
   };
 
   return (
@@ -106,14 +133,16 @@ export function DesktopIcon({
       style={style}
       {...listeners}
       {...attributes}
-      onClick={() => !isRenaming && openApp(appId)}
+      onClick={handleClick}
       onContextMenu={e => {
         e.preventDefault();
         onContextMenu?.(e);
       }}
       data-icon-id={appId}
     >
-      <AppIcon appId={appId} size={56} />
+      <div style={iconWrapperStyle}>
+        <AppIcon appId={appId} size={56} />
+      </div>
 
       {isRenaming ? (
         <input

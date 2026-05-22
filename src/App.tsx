@@ -4,6 +4,7 @@ import { useBootStore } from './stores/bootStore';
 import { Desktop } from './components/desktop/Desktop';
 import { MobileView } from './components/mobile/MobileView';
 import { BootAnimation } from './components/boot/BootAnimation';
+import { SystemOverlays } from './components/system/SystemOverlays';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -29,9 +30,10 @@ export default function App() {
     return <MobileView />;
   }
 
-  if (!bootComplete) {
-    return <BootAnimation />;
-  }
-
-  return <Desktop />;
+  return (
+    <>
+      {!bootComplete ? <BootAnimation /> : <Desktop />}
+      <SystemOverlays />
+    </>
+  );
 }

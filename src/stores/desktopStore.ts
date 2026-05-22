@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppId, DesktopIconPosition } from '../types';
 
-const APP_IDS: AppId[] = ['about', 'experience', 'projects', 'contact', 'resume', 'settings'];
+const APP_IDS: AppId[] = ['about', 'projects', 'contact', 'resume', 'settings'];
 
 function defaultPositions(): DesktopIconPosition[] {
   // macOS convention: icons start at top-right of desktop
@@ -13,6 +13,8 @@ function defaultPositions(): DesktopIconPosition[] {
     row: Math.floor(i / 2),
   }));
 }
+
+const VALID_IDS = new Set<string>(APP_IDS);
 
 interface DesktopStore {
   positions: DesktopIconPosition[];
@@ -52,6 +54,18 @@ export const useDesktopStore = create<DesktopStore>()(
           ],
         })),
     }),
-    { name: 'portfolio-iconPositions' }
+    {
+      name: 'portfolio-iconPositions',
+      version: 1,
+      migrate: (persisted: unknown) => {
+        const s = persisted as { positions?: unknown[]; names?: unknown };
+        return {
+          positions: ((s.positions ?? []) as DesktopIconPosition[]).filter(
+            p => VALID_IDS.has(p.appId)
+          ),
+          names: (s.names ?? {}) as Partial<Record<AppId, string>>,
+        };
+      },
+    }
   )
 );

@@ -12,14 +12,19 @@ export function useTimeOfDay() {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
+    const id = setInterval(() => setNow(new Date()), 10_000);
     return () => clearInterval(id);
   }, []);
 
   const hour = now.getHours();
+  const weekday = now.toLocaleDateString([], { weekday: 'short' });
+  const month = now.toLocaleDateString([], { month: 'short' });
+  const day = now.getDate();
+
   return {
     now,
     timeOfDay: getTimeOfDay(hour),
     timeString: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dateString: `${weekday} ${month} ${day}`,
   };
 }

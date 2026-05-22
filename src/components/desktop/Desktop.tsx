@@ -9,6 +9,7 @@ import { useBootStore } from '../../stores/bootStore';
 import { useWindowManager } from '../../hooks/useWindowManager';
 import { useTimeOfDay } from '../../hooks/useTimeOfDay';
 import type { TimeOfDay, Wallpaper } from '../../types';
+import sequoiaWallpaper from '../../assets/wallpapers/sequoia-light2.jpg';
 import '../../styles/animations.css';
 
 function getWallpaperGradient(tod: TimeOfDay): string {
@@ -22,7 +23,7 @@ function getWallpaperGradient(tod: TimeOfDay): string {
 
 const WALLPAPER_MAP: Record<Wallpaper, string> = {
   dynamic: '',
-  sequoia: 'linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+  sequoia: `url(${sequoiaWallpaper})`,
   'dark-gradient': 'linear-gradient(160deg, #232526 0%, #414345 100%)',
   'minimal-light': 'linear-gradient(160deg, #f5f7fa 0%, #c3cfe2 100%)',
   aurora: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 30%, #1a472a 60%, #0f3460 100%)',
@@ -86,8 +87,10 @@ export function Desktop() {
       style={{
         position: 'fixed',
         inset: 0,
-        background: bg,
-        transition: 'background 2s ease',
+        backgroundImage: bg,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        transition: 'background-image 2s ease',
         overflow: 'hidden',
       }}
     >

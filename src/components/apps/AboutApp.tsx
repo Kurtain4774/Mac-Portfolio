@@ -83,8 +83,7 @@ export default function AboutApp() {
 
       {/* Nav links */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 14 }}>
-        <CrossNavLink to="projects" label="View my Projects →" minimizeSourceId={focusedWindowId ?? undefined} />
-        <CrossNavLink to="experience" label="See my Experience →" minimizeSourceId={focusedWindowId ?? undefined} />
+        <CrossNavLink to="projects" label="View my Work →" minimizeSourceId={focusedWindowId ?? undefined} />
         <CrossNavLink to="resume" label="Download Resume →" minimizeSourceId={focusedWindowId ?? undefined} />
       </div>
     </div>

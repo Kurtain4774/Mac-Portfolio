@@ -1,13 +1,14 @@
 import { Moon, Sun } from 'lucide-react';
 import { useThemeStore } from '../../stores/themeStore';
 import type { Wallpaper } from '../../types';
+import sequoiaWallpaper from '../../assets/wallpapers/sequoia-light2.jpg';
 
-const WALLPAPERS: { id: Wallpaper; label: string; gradient: string }[] = [
-  { id: 'dynamic', label: 'Dynamic', gradient: 'linear-gradient(135deg, #fde68a, #38bdf8, #1e1b4b)' },
-  { id: 'sequoia', label: 'Sequoia', gradient: 'linear-gradient(135deg, #1a1a2e, #0f3460)' },
-  { id: 'dark-gradient', label: 'Midnight', gradient: 'linear-gradient(135deg, #232526, #414345)' },
-  { id: 'minimal-light', label: 'Mist', gradient: 'linear-gradient(135deg, #f5f7fa, #c3cfe2)' },
-  { id: 'aurora', label: 'Aurora', gradient: 'linear-gradient(135deg, #0f172a, #1a472a, #0f3460)' },
+const WALLPAPERS: { id: Wallpaper; label: string; preview: string; isImage?: boolean }[] = [
+  { id: 'dynamic', label: 'Dynamic', preview: 'linear-gradient(135deg, #fde68a, #38bdf8, #1e1b4b)' },
+  { id: 'sequoia', label: 'Sequoia', preview: sequoiaWallpaper, isImage: true },
+  { id: 'dark-gradient', label: 'Midnight', preview: 'linear-gradient(135deg, #232526, #414345)' },
+  { id: 'minimal-light', label: 'Mist', preview: 'linear-gradient(135deg, #f5f7fa, #c3cfe2)' },
+  { id: 'aurora', label: 'Aurora', preview: 'linear-gradient(135deg, #0f172a, #1a472a, #0f3460)' },
 ];
 
 export default function SettingsApp() {
@@ -90,7 +91,14 @@ export default function SettingsApp() {
                 transition: 'border-color 0.15s',
               }}
             >
-              <div style={{ width: '100%', height: 56, background: w.gradient }} />
+              <div style={{
+                width: '100%',
+                height: 56,
+                background: w.isImage ? undefined : w.preview,
+                backgroundImage: w.isImage ? `url(${w.preview})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }} />
               <div style={{
                 padding: '4px 0 6px',
                 fontSize: 11,
