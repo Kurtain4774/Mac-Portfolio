@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, useDndMonitor } from '@dnd-kit/core';
 import { useDesktopStore } from '../../stores/desktopStore';
 import { useWindowStore } from '../../stores/windowStore';
@@ -8,6 +9,85 @@ import { apps } from '../../config/apps';
 import { DesktopIcon, CELL, GAP } from './DesktopIcon';
 import { ContextMenu } from '../shared/ContextMenu';
 import type { AppId, DesktopIconPosition } from '../../types';
+
+function findFreeCell(positions: DesktopIconPosition[]): { col: number; row: number } {
+  const occupied = new Set(positions.map(p => `${p.col},${p.row}`));
+  for (let row = 0; row < 12; row++) {
+    for (let col = 9; col >= 0; col--) {
+      if (!occupied.has(`${col},${row}`)) return { col, row };
+    }
+  }
+  return { col: 0, row: 0 };
+}
+
+function DesktopBgContextMenu({
+  x, y, trashedCount, onRestoreAll, onClose,
+}: { x: number; y: number; trashedCount: number; onRestoreAll: () => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+  const menuW = 210;
+  const menuH = trashedCount > 0 ? 68 : 40;
+  const left = Math.min(x, window.innerWidth  - menuW - 8);
+  const top  = Math.min(y, window.innerHeight - menuH - 8);
+
+  return createPortal(
+    <div
+      ref={ref}
+      onContextMenu={e => e.preventDefault()}
+      style={{
+        position: 'fixed', left, top, width: menuW,
+        background: 'rgba(245,245,245,0.94)',
+        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(0,0,0,0.12)',
+        borderRadius: 9,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12)',
+        zIndex: 9999, padding: '4px 0',
+        fontFamily: 'var(--font-system)', fontSize: 13, userSelect: 'none',
+      }}
+    >
+      <BgItem label="Clean Up Desktop" onClick={onClose} />
+      {trashedCount > 0 && (
+        <>
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.09)', margin: '3px 0' }} />
+          <BgItem
+            label={`Restore All Icons (${trashedCount})`}
+            onClick={() => { onRestoreAll(); onClose(); }}
+          />
+        </>
+      )}
+    </div>,
+    document.body
+  );
+}
+
+function BgItem({ label, onClick }: { label: string; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '5px 14px', cursor: 'default', borderRadius: 5, margin: '1px 4px',
+        color: hovered ? '#fff' : '#1a1a1a',
+        background: hovered ? '#0066ff' : 'transparent',
+        transition: 'background 60ms, color 60ms',
+      }}
+    >
+      {label}
+    </div>
+  );
+}
 
 interface MarqueeState {
   startX: number;
@@ -39,11 +119,12 @@ interface IconsProps {
   onIconContextMenu: (appId: AppId, e: React.MouseEvent) => void;
   onRenameConfirm: (appId: AppId, name: string) => void;
   onRenameCancel: () => void;
+  onDesktopContextMenu: (x: number, y: number) => void;
 }
 
 function DesktopGridIcons({
   positions, selectedIds, selRect, containerRef, renamingId,
-  onMouseDown, onIconContextMenu, onRenameConfirm, onRenameCancel,
+  onMouseDown, onIconContextMenu, onRenameConfirm, onRenameCancel, onDesktopContextMenu,
 }: IconsProps) {
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
   const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 });
@@ -62,7 +143,7 @@ function DesktopGridIcons({
     <div
       ref={containerRef}
       onMouseDown={onMouseDown}
-      onContextMenu={e => e.preventDefault()}
+      onContextMenu={e => { e.preventDefault(); onDesktopContextMenu(e.clientX, e.clientY); }}
       style={{
         position: 'absolute',
         inset: 0,
@@ -137,6 +218,9 @@ export function DesktopGrid() {
   const removeIcon = useDesktopStore(s => s.removeIcon);
   const openApp = useWindowStore(s => s.openApp);
   const sendToTrash = useTrashStore(s => s.sendToTrash);
+  const trashedApps = useTrashStore(s => s.trashedApps);
+  const restoreFromTrash = useTrashStore(s => s.restoreFromTrash);
+  const restoreIcon = useDesktopStore(s => s.restoreIcon);
   const setDraggingIcon = useDragStore(s => s.setDraggingIcon);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,6 +230,7 @@ export function DesktopGrid() {
   const [selectedIds, setSelectedIds] = useState<Set<AppId>>(new Set());
   const [contextMenu, setContextMenu] = useState<CtxMenu | null>(null);
   const [renamingId, setRenamingId] = useState<AppId | null>(null);
+  const [desktopCtxMenu, setDesktopCtxMenu] = useState<{ x: number; y: number } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -174,26 +259,39 @@ export function DesktopGrid() {
     const deltaCol = Math.round(delta.x / (CELL + GAP));
     const deltaRow = Math.round(delta.y / (CELL + GAP));
 
+    const containerEl = containerRef.current;
+    const maxCol = containerEl ? Math.floor((containerEl.offsetWidth  - CELL) / (CELL + GAP)) : 20;
+    const maxRow = containerEl ? Math.floor((containerEl.offsetHeight - CELL) / (CELL + GAP)) : 20;
+
     if (sel.has(appId) && sel.size > 1) {
       const selectedPos = positions.filter(p => sel.has(p.appId));
       const unselectedPos = positions.filter(p => !sel.has(p.appId));
+
+      // Find the most restrictive in-bounds delta across all selected icons so they
+      // all move by the same amount and none goes off-screen.
+      let adjCol = deltaCol;
+      let adjRow = deltaRow;
+      for (const p of selectedPos) {
+        adjCol = Math.max(adjCol, -p.col);            // left wall
+        adjRow = Math.max(adjRow, -p.row);            // top wall
+        adjCol = Math.min(adjCol, maxCol - p.col);    // right wall
+        adjRow = Math.min(adjRow, maxRow - p.row);    // bottom wall
+      }
+
       const moves = selectedPos.map(p => ({
         appId: p.appId,
-        col: Math.max(0, p.col + deltaCol),
-        row: Math.max(0, p.row + deltaRow),
+        col: p.col + adjCol,
+        row: p.row + adjRow,
       }));
-      // Self-collision: clamping at 0 can cause two icons to land on the same cell
-      const coordSet = new Set(moves.map(m => `${m.col},${m.row}`));
-      const hasSelfCollision = coordSet.size < moves.length;
-      const hasCollision = hasSelfCollision || moves.some(m =>
+      const hasCollision = moves.some(m =>
         unselectedPos.some(u => u.col === m.col && u.row === m.row)
       );
       if (!hasCollision) moveIcons(moves);
     } else {
       const current = positions.find(p => p.appId === appId);
       if (!current) return;
-      const newCol = Math.max(0, current.col + deltaCol);
-      const newRow = Math.max(0, current.row + deltaRow);
+      const newCol = Math.min(maxCol, Math.max(0, current.col + deltaCol));
+      const newRow = Math.min(maxRow, Math.max(0, current.row + deltaRow));
       const occupied = positions.some(p => p.appId !== appId && p.col === newCol && p.row === newRow);
       if (!occupied) moveIcon(appId, newCol, newRow);
     }
@@ -271,6 +369,16 @@ export function DesktopGrid() {
     setContextMenu(null);
   };
 
+  const handleRestoreAll = () => {
+    let current = [...positions];
+    trashedApps.forEach(appId => {
+      const { col, row } = findFreeCell(current);
+      restoreFromTrash(appId);
+      restoreIcon(appId, col, row);
+      current = [...current, { appId, col, row }];
+    });
+  };
+
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <DesktopGridIcons
@@ -289,7 +397,18 @@ export function DesktopGrid() {
           setRenamingId(null);
         }}
         onRenameCancel={() => setRenamingId(null)}
+        onDesktopContextMenu={(x, y) => setDesktopCtxMenu({ x, y })}
       />
+
+      {desktopCtxMenu && (
+        <DesktopBgContextMenu
+          x={desktopCtxMenu.x}
+          y={desktopCtxMenu.y}
+          trashedCount={trashedApps.length}
+          onRestoreAll={handleRestoreAll}
+          onClose={() => setDesktopCtxMenu(null)}
+        />
+      )}
 
       {contextMenu && (
         <ContextMenu
