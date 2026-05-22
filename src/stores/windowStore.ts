@@ -4,9 +4,11 @@ import { appMap } from '../config/apps';
 
 let nextZIndex = 10;
 
-function defaultGeometry() {
-  const w = Math.round(window.innerWidth * 0.65);
-  const h = Math.round(window.innerHeight * 0.65);
+function defaultGeometry(appId?: AppId) {
+  const widthRatio = appId === 'finder' ? 0.76 : 0.65;
+  const heightRatio = appId === 'finder' ? 0.68 : 0.65;
+  const w = Math.round(window.innerWidth * widthRatio);
+  const h = Math.round(window.innerHeight * heightRatio);
   const x = Math.round((window.innerWidth - w) / 2);
   const y = Math.round((window.innerHeight - h) / 2);
   return { x, y, width: w, height: h };
@@ -49,7 +51,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
     const id = `${appId}-${Date.now()}`;
-    const geo = defaultGeometry();
+    const geo = defaultGeometry(appId);
     set(s => ({
       windows: [
         ...s.windows,

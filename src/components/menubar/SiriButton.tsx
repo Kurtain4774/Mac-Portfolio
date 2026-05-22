@@ -1,10 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useWindowStore } from '../../stores/windowStore';
 import type { AppId } from '../../types';
 import siriIcon from '../../assets/icons/siri.png';
 
 const PANEL_Z = 9700;
+
+const glassPanelVars = {
+  '--color-text-primary': '#eeeaf7',
+  '--color-text-secondary': 'rgba(238,234,247,0.74)',
+  '--color-text-tertiary': 'rgba(238,234,247,0.42)',
+  '--color-card-border': 'rgba(232,221,255,0.18)',
+  '--color-badge-bg': 'rgba(255,255,255,0.10)',
+  '--color-accent': '#a78bfa',
+} as CSSProperties;
 
 interface QA {
   question: string;
@@ -98,12 +107,13 @@ function SiriPanel({ onClose }: { onClose: () => void }) {
           zIndex: PANEL_Z,
           width: 480,
           maxWidth: 'calc(100vw - 40px)',
-          background: 'var(--color-dropdown-bg)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          borderRadius: 16,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-          border: '0.5px solid var(--color-card-border)',
+          ...glassPanelVars,
+          background: 'linear-gradient(145deg, rgba(45,27,94,0.82), rgba(34,18,76,0.78))',
+          backdropFilter: 'blur(34px) saturate(1.45)',
+          WebkitBackdropFilter: 'blur(34px) saturate(1.45)',
+          borderRadius: 10,
+          boxShadow: '0 24px 80px rgba(18,7,44,0.58), inset 0 1px 0 rgba(255,255,255,0.15)',
+          border: '1px solid rgba(232,221,255,0.28)',
           fontFamily: 'var(--font-system)',
           overflow: 'hidden',
         }}
@@ -241,7 +251,7 @@ export function SiriButton({ open: extOpen, onOpenChange: extSetOpen }: SiriButt
         title="Siri"
         aria-label="Ask Siri"
         style={{
-          background: 'none',
+          background: open ? 'rgba(255,255,255,0.15)' : 'transparent',
           border: 'none',
           cursor: 'pointer',
           padding: '2px 6px',

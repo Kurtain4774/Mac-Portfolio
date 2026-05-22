@@ -16,7 +16,7 @@ export interface AppConfig {
   name: string;
   dockOrder: number;
   icon: string;
-  component?: ReturnType<typeof lazy<ComponentType>>;
+  component?: ReturnType<typeof lazy<ComponentType<any>>>;
   mailto?: string;
 }
 

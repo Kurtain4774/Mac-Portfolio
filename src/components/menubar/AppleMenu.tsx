@@ -118,7 +118,7 @@ export function AppleMenu({ open, onOpenChange, onTriggerHover }: AppleMenuProps
         onOpenChange={onOpenChange}
         onTriggerHover={onTriggerHover}
         label={appleIcon}
-        minWidth={220}
+        minWidth={260}
         bold
       >
         <MenuItem
@@ -127,8 +127,20 @@ export function AppleMenu({ open, onOpenChange, onTriggerHover }: AppleMenuProps
         />
         <MenuSeparator />
         <MenuItem
-          label="System Settings…"
-          shortcut="⌘,"
+          label="System Settings..."
+          badge="1 update"
+          onClick={() => { openApp('settings'); close(); }}
+        />
+        <MenuItem
+          label="App Store"
+          onClick={() => { openApp('projects'); close(); }}
+        />
+        <MenuSeparator />
+        <MenuItem label="Recent Items" trailing="›" onClick={close} />
+        <MenuSeparator />
+        <MenuItem
+          label="Force Quit System Settings"
+          shortcut="⌥⇧⌘⎋"
           onClick={() => { openApp('settings'); close(); }}
         />
         <MenuSeparator />
@@ -137,18 +149,22 @@ export function AppleMenu({ open, onOpenChange, onTriggerHover }: AppleMenuProps
           onClick={() => { setPowerState('sleeping'); close(); }}
         />
         <MenuItem
-          label="Restart…"
+          label="Restart..."
           onClick={() => { restart(); close(); }}
         />
         <MenuItem
-          label="Shut Down…"
+          label="Shut Down..."
           onClick={() => { setPowerState('off'); close(); }}
-          destructive
         />
         <MenuSeparator />
         <MenuItem
           label="Lock Screen"
           shortcut="⌃⌘Q"
+          onClick={() => { setPowerState('locked'); close(); }}
+        />
+        <MenuItem
+          label="Log Out Kurtis Quant..."
+          shortcut="⇧⌘Q"
           onClick={() => { setPowerState('locked'); close(); }}
         />
       </MenuBarMenu>

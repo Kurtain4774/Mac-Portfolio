@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { useTimeOfDay } from '../../hooks/useTimeOfDay';
 import { useSystemStore } from '../../stores/systemStore';
@@ -6,6 +6,15 @@ import { useWindowStore } from '../../stores/windowStore';
 
 const PANEL_Z = 9700;
 const MENUBAR_H = 28;
+
+const glassPanelVars = {
+  '--color-text-primary': '#eeeaf7',
+  '--color-text-secondary': 'rgba(238,234,247,0.74)',
+  '--color-text-tertiary': 'rgba(238,234,247,0.42)',
+  '--color-card-border': 'rgba(232,221,255,0.18)',
+  '--color-badge-bg': 'rgba(255,255,255,0.10)',
+  '--color-accent': '#a78bfa',
+} as CSSProperties;
 
 // ─── Calendar widget ──────────────────────────────────────────────────────────
 
@@ -139,18 +148,19 @@ function NotificationCenter({ onClose, triggerRight }: { onClose: () => void; tr
       <div
         style={{
           position: 'fixed',
-          top: MENUBAR_H,
+          top: MENUBAR_H + 4,
           right: triggerRight,
           zIndex: PANEL_Z,
           width: 320,
           maxHeight: 'calc(100vh - 40px)',
           overflowY: 'auto',
-          background: 'var(--color-panel-bg)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          borderRadius: 12,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-          border: '0.5px solid var(--color-card-border)',
+          ...glassPanelVars,
+          background: 'linear-gradient(145deg, rgba(45,27,94,0.82), rgba(34,18,76,0.78))',
+          backdropFilter: 'blur(34px) saturate(1.45)',
+          WebkitBackdropFilter: 'blur(34px) saturate(1.45)',
+          borderRadius: 10,
+          boxShadow: '0 24px 80px rgba(18,7,44,0.58), inset 0 1px 0 rgba(255,255,255,0.15)',
+          border: '1px solid rgba(232,221,255,0.28)',
           fontFamily: 'var(--font-system)',
         }}
         onClick={e => e.stopPropagation()}
@@ -227,10 +237,10 @@ export function ClockMenu() {
         ref={setRef}
         onClick={() => setOpen(v => !v)}
         style={{
-          background: open ? 'rgba(255,255,255,0.22)' : 'none',
+          background: open ? 'rgba(255,255,255,0.15)' : 'transparent',
           border: 'none',
           cursor: 'default',
-          color: '#ffffff',
+          color: 'rgba(255,255,255,0.94)',
           fontSize: 13,
           fontFamily: 'var(--font-system)',
           fontWeight: 500,

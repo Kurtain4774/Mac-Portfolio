@@ -20,6 +20,7 @@ export function Window({ win }: Props) {
   const isFocused = focusedWindowId === win.id;
 
   const [animState, setAnimState] = useState<'enter' | 'idle' | 'exit'>('enter');
+  const isFinder = win.appId === 'finder';
 
   const handleClose = useCallback(() => {
     setAnimState('exit');
@@ -39,6 +40,7 @@ export function Window({ win }: Props) {
       minHeight={300}
       bounds="parent"
       dragHandleClassName="window-titlebar"
+      cancel=".window-no-drag, input, textarea, button, a, select"
       enableResizing={!win.maximized}
       disableDragging={win.maximized}
       style={{ zIndex: win.zIndex, position: 'absolute' }}
@@ -73,14 +75,25 @@ export function Window({ win }: Props) {
         transition={{ duration: 0.18, ease: 'easeOut' }}
         style={{ width: '100%', height: '100%' }}
       >
-        <WindowTitleBar
-          win={win}
-          isFocused={isFocused}
-          onClose={handleClose}
-          onMinimize={handleMinimize}
-          onMaximize={() => maximizeWindow(win.id)}
+        {!isFinder && (
+          <WindowTitleBar
+            win={win}
+            isFocused={isFocused}
+            onClose={handleClose}
+            onMinimize={handleMinimize}
+            onMaximize={() => maximizeWindow(win.id)}
+          />
+        )}
+        <WindowContent
+          appId={win.appId}
+          windowControls={{
+            isFocused,
+            onClose: handleClose,
+            onMinimize: handleMinimize,
+            onMaximize: () => maximizeWindow(win.id),
+            isMaximized: win.maximized,
+          }}
         />
-        <WindowContent appId={win.appId} />
       </motion.div>
     </Rnd>
   );

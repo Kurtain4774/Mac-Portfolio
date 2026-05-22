@@ -4,6 +4,17 @@ import { createPortal } from 'react-dom';
 const MENUBAR_H = 28;
 export const DROPDOWN_Z = 9600;
 
+const glassMenuVars = {
+  '--color-text-primary': '#eeeaf7',
+  '--color-text-secondary': 'rgba(238,234,247,0.74)',
+  '--color-text-tertiary': 'rgba(238,234,247,0.42)',
+  '--color-card-border': 'rgba(232,221,255,0.18)',
+  '--color-badge-bg': 'rgba(255,255,255,0.10)',
+  '--color-accent': '#a78bfa',
+  '--color-item-hover-bg': 'rgba(255,255,255,0.13)',
+  '--color-item-hover-text': '#ffffff',
+} as React.CSSProperties;
+
 // ─── MenuItem ────────────────────────────────────────────────────────────────
 
 interface MenuItemProps {
@@ -13,20 +24,34 @@ interface MenuItemProps {
   disabled?: boolean;
   destructive?: boolean;
   checked?: boolean;
+  badge?: string;
+  trailing?: React.ReactNode;
 }
 
-export function MenuItem({ label, shortcut, onClick, disabled, destructive, checked }: MenuItemProps) {
+export function MenuItem({
+  label,
+  shortcut,
+  onClick,
+  disabled,
+  destructive,
+  checked,
+  badge,
+  trailing,
+}: MenuItemProps) {
   const [hov, setHov] = React.useState(false);
 
   const baseStyle: React.CSSProperties = {
+    minHeight: 24,
     padding: '3px 12px',
     cursor: disabled ? 'default' : 'default',
-    borderRadius: 4,
+    borderRadius: 5,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     userSelect: 'none',
-    gap: 24,
+    gap: 18,
+    fontSize: 13,
+    fontWeight: 600,
   };
 
   if (disabled) {
@@ -50,17 +75,53 @@ export function MenuItem({ label, shortcut, onClick, disabled, destructive, chec
         color: hov
           ? 'var(--color-item-hover-text)'
           : destructive
-          ? '#ff3b30'
+          ? '#ffb4ca'
           : 'var(--color-text-primary)',
       }}
     >
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
         {checked != null && (
           <span style={{ width: 12, display: 'inline-block', opacity: checked ? 1 : 0 }}>✓</span>
         )}
         {label}
       </span>
-      {shortcut && <span style={{ fontSize: 12, opacity: 0.6, flexShrink: 0 }}>{shortcut}</span>}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {badge && (
+          <span
+            style={{
+              padding: '2px 10px',
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.14)',
+              color: '#eeeaf7',
+              fontSize: 12,
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+        {shortcut && (
+          <span style={{ fontSize: 13, opacity: 0.36, flexShrink: 0, letterSpacing: 0.5 }}>
+            {shortcut}
+          </span>
+        )}
+        {trailing && (
+          <span style={{ fontSize: 18, lineHeight: 1, opacity: 0.95, flexShrink: 0 }}>
+            {trailing}
+          </span>
+        )}
+      </span>
     </div>
   );
 }
@@ -69,7 +130,7 @@ export function MenuItem({ label, shortcut, onClick, disabled, destructive, chec
 
 export function MenuSeparator() {
   return (
-    <div style={{ height: 1, background: 'var(--color-card-border)', margin: '4px 0' }} />
+    <div style={{ height: 1, background: 'var(--color-card-border)', margin: '4px 12px' }} />
   );
 }
 
@@ -79,7 +140,7 @@ export function MenuHeader({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       padding: '4px 12px 2px',
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: 600,
       color: 'var(--color-text-secondary)',
       userSelect: 'none',
@@ -120,6 +181,7 @@ export function MenuBarMenu({
   bold = false,
 }: MenuBarMenuProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   useEffect(() => {
@@ -132,6 +194,17 @@ export function MenuBarMenu({
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, [open, close]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      close();
+    };
+    document.addEventListener('pointerdown', onPointerDown, { capture: true });
+    return () => document.removeEventListener('pointerdown', onPointerDown, { capture: true });
   }, [open, close]);
 
   const rect = triggerRef.current?.getBoundingClientRect();
@@ -149,10 +222,10 @@ export function MenuBarMenu({
         onClick={() => onOpenChange(!open)}
         onMouseEnter={onTriggerHover}
         style={{
-          background: open ? 'rgba(255,255,255,0.22)' : 'none',
+          background: open ? 'rgba(255,255,255,0.15)' : 'transparent',
           border: 'none',
           cursor: 'default',
-          color: '#ffffff',
+          color: 'rgba(255,255,255,0.94)',
           fontSize: 13,
           fontFamily: 'var(--font-system)',
           fontWeight: bold ? 600 : 400,
@@ -172,34 +245,32 @@ export function MenuBarMenu({
       </button>
 
       {open && rect && createPortal(
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: DROPDOWN_Z - 1 }}
-            onClick={close}
-          />
-          <div
-            role="menu"
-            style={{
-              position: 'fixed',
-              top: MENUBAR_H,
-              minWidth,
-              ...panelPos,
-              background: 'var(--color-dropdown-bg)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              borderRadius: 8,
-              boxShadow: '0 4px 24px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.10)',
-              border: '0.5px solid var(--color-card-border)',
-              padding: '4px 0',
-              zIndex: DROPDOWN_Z,
-              fontFamily: 'var(--font-system)',
-              fontSize: 13,
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            {children}
-          </div>
-        </>,
+        <div
+          ref={panelRef}
+          role="menu"
+          style={{
+            position: 'fixed',
+            top: MENUBAR_H + 4,
+            minWidth,
+            width: minWidth,
+            ...panelPos,
+            ...glassMenuVars,
+            background: 'linear-gradient(145deg, rgba(45,27,94,0.82), rgba(34,18,76,0.78))',
+            backdropFilter: 'blur(34px) saturate(1.45)',
+            WebkitBackdropFilter: 'blur(34px) saturate(1.45)',
+            borderRadius: 8,
+            boxShadow: '0 24px 80px rgba(18,7,44,0.58), inset 0 1px 0 rgba(255,255,255,0.15)',
+            border: '1px solid rgba(232,221,255,0.28)',
+            padding: '4px 0',
+            zIndex: DROPDOWN_Z,
+            fontFamily: 'var(--font-system)',
+            color: '#eeeaf7',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+          }}
+        >
+          {children}
+        </div>,
         document.body
       )}
     </>

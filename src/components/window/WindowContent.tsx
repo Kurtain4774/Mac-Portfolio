@@ -4,6 +4,13 @@ import type { AppId } from '../../types';
 
 interface Props {
   appId: AppId;
+  windowControls?: {
+    isFocused: boolean;
+    onClose: () => void;
+    onMinimize: () => void;
+    onMaximize: () => void;
+    isMaximized: boolean;
+  };
 }
 
 function Loading() {
@@ -23,7 +30,7 @@ function Loading() {
   );
 }
 
-export function WindowContent({ appId }: Props) {
+export function WindowContent({ appId, windowControls }: Props) {
   const app = appMap[appId];
   if (!app.component) return null;
   const AppComponent = app.component;
@@ -33,13 +40,13 @@ export function WindowContent({ appId }: Props) {
       className="window-content-area"
       style={{
         flex: 1,
-        overflow: 'auto',
+        overflow: appId === 'finder' ? 'hidden' : 'auto',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
       <Suspense fallback={<Loading />}>
-        <AppComponent />
+        <AppComponent windowControls={windowControls} />
       </Suspense>
     </div>
   );

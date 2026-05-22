@@ -5,8 +5,9 @@ import { AppIcon } from '../shared/AppIcon';
 import { useDesktopStore } from '../../stores/desktopStore';
 import type { AppId } from '../../types';
 
-const CELL = 90;
+const CELL = 99;
 const GAP = 16;
+const ICON_SIZE = 62;
 
 interface DragTransform {
   x: number;
@@ -53,20 +54,16 @@ export function DesktopIcon({
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleClick = (e: React.MouseEvent) => {
     if (isRenaming) return;
-    if (clickTimerRef.current) {
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      onOpen?.();
-    } else {
-      onSelect?.(e);
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null;
-      }, 300);
-    }
+    onSelect?.(e);
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (isRenaming) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+    onOpen?.();
   };
 
   useEffect(() => {
@@ -134,6 +131,7 @@ export function DesktopIcon({
       {...listeners}
       {...attributes}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={e => {
         e.preventDefault();
         onContextMenu?.(e);
@@ -141,7 +139,7 @@ export function DesktopIcon({
       data-icon-id={appId}
     >
       <div style={iconWrapperStyle}>
-        <AppIcon appId={appId} size={56} />
+        <AppIcon appId={appId} size={ICON_SIZE} />
       </div>
 
       {isRenaming ? (

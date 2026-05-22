@@ -1,4 +1,4 @@
-import { useRef, useState, Fragment } from 'react';
+import { useEffect, useRef, useState, Fragment } from 'react';
 import { useWindowStore } from '../../stores/windowStore';
 import { useTrashStore } from '../../stores/trashStore';
 import { useDragStore } from '../../stores/dragStore';
@@ -10,6 +10,11 @@ import trashEmptyIcon from '../../assets/icons/trash_empty_256x256x32.png';
 import trashFullIcon from '../../assets/icons/trash_full_256x256x32.png';
 
 const ICON_BASE = 56;
+
+interface DockProps {
+  launchpadOpen?: boolean;
+  onLaunchpadToggle?: () => void;
+}
 
 function TrashBinIcon({ hasItems, isOver }: { hasItems: boolean; isOver: boolean }) {
   return (
@@ -35,18 +40,97 @@ function TrashBinIcon({ hasItems, isOver }: { hasItems: boolean; isOver: boolean
   );
 }
 
-export function Dock() {
+export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
   const windows = useWindowStore(s => s.windows);
   const openApp = useWindowStore(s => s.openApp);
+  const minimizeWindow = useWindowStore(s => s.minimizeWindow);
   const trashedApps = useTrashStore(s => s.trashedApps);
   const isDraggingIcon = useDragStore(s => s.isDraggingIcon);
   const dockRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const didLongPressRef = useRef(false);
+  const launchTimerRefs = useRef<Partial<Record<AppId, number>>>({});
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [pressedAppId, setPressedAppId] = useState<AppId | null>(null);
+  const [launchingAppIds, setLaunchingAppIds] = useState<AppId[]>([]);
+  const [dockMenu, setDockMenu] = useState<{ appId: AppId } | null>(null);
   const [trashHovered, setTrashHovered] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
 
   const isOpen = (appId: AppId) => windows.some(w => w.appId === appId && !w.minimized);
   const isMinimized = (appId: AppId) => windows.some(w => w.appId === appId && w.minimized);
+  const visibleWindowForApp = (appId: AppId) => windows.find(w => w.appId === appId && !w.minimized);
+
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current === null) return;
+    window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  };
+
+  const openDockMenu = (appId: AppId, suppressNextClick = true) => {
+    didLongPressRef.current = suppressNextClick;
+    setPressedAppId(null);
+    setDockMenu({ appId });
+  };
+
+  const closeDockMenu = () => {
+    didLongPressRef.current = false;
+    setDockMenu(null);
+  };
+
+  const bounceAppIcon = (appId: AppId) => {
+    setLaunchingAppIds(ids => (ids.includes(appId) ? ids : [...ids, appId]));
+
+    const existingTimer = launchTimerRefs.current[appId];
+    if (existingTimer) window.clearTimeout(existingTimer);
+
+    launchTimerRefs.current[appId] = window.setTimeout(() => {
+      setLaunchingAppIds(ids => ids.filter(id => id !== appId));
+      delete launchTimerRefs.current[appId];
+    }, 650);
+  };
+
+  const runDockAction = (appId: AppId) => {
+    if (appId === 'launchpad') {
+      onLaunchpadToggle?.();
+      return;
+    }
+
+    const visibleWindow = visibleWindowForApp(appId);
+    if (visibleWindow) {
+      minimizeWindow(visibleWindow.id);
+      return;
+    }
+
+    const appConfig = apps.find(app => app.id === appId);
+    if (!appConfig?.mailto && !isMinimized(appId)) {
+      bounceAppIcon(appId);
+    }
+
+    openApp(appId);
+  };
+
+  useEffect(() => {
+    const closeDockMenuOnOutsideClick = (event: MouseEvent) => {
+      if (dockRef.current?.contains(event.target as Node)) return;
+      closeDockMenu();
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDockMenu();
+    };
+
+    document.addEventListener('mousedown', closeDockMenuOnOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      clearLongPressTimer();
+      Object.values(launchTimerRefs.current).forEach(timer => {
+        if (timer) window.clearTimeout(timer);
+      });
+      document.removeEventListener('mousedown', closeDockMenuOnOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   return (
     <Fragment>
@@ -56,7 +140,7 @@ export function Dock() {
           bottom: 8,
           left: '50%',
           transform: 'translateX(-50%)',
-          zIndex: 8000,
+          zIndex: launchpadOpen ? 9600 : 8000,
         }}
       >
         <div
@@ -75,12 +159,15 @@ export function Dock() {
             border: '1px solid rgba(255,255,255,0.18)',
           }}
         >
-          {apps
+          {[...apps]
             .sort((a, b) => a.dockOrder - b.dockOrder)
             .map((app, i) => {
               const open = isOpen(app.id);
               const minimized = isMinimized(app.id);
               const isHovered = hoveredIndex === i;
+              const isPressed = pressedAppId === app.id;
+              const isLaunching = launchingAppIds.includes(app.id);
+              const menuOpen = dockMenu?.appId === app.id;
 
               return (
                 <div
@@ -97,6 +184,136 @@ export function Dock() {
                   onMouseEnter={() => setHoveredIndex(i)}
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
+                  {menuOpen && (
+                    <div
+                      role="menu"
+                      aria-label={`${app.name} Dock menu`}
+                      style={{
+                        position: 'absolute',
+                        left: '50%',
+                        bottom: 'calc(100% + 16px)',
+                        width: 220,
+                        transform: 'translateX(-50%)',
+                        padding: '7px 0',
+                        borderRadius: 8,
+                        background: 'rgba(41, 46, 54, 0.96)',
+                        border: '1px solid rgba(255,255,255,0.22)',
+                        boxShadow: '0 14px 30px rgba(0,0,0,0.34), inset 0 1px rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.88)',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                        fontSize: 18,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                        zIndex: 10000,
+                        backdropFilter: 'blur(22px)',
+                        WebkitBackdropFilter: 'blur(22px)',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeDockMenu();
+                        }}
+                        style={{
+                          width: '100%',
+                          height: 36,
+                          padding: '0 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: 0,
+                          background: 'transparent',
+                          color: 'inherit',
+                          font: 'inherit',
+                          cursor: 'default',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span>Options</span>
+                        <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 0.8 }}>&gt;</span>
+                      </button>
+                      <div
+                        style={{
+                          height: 1,
+                          margin: '0 18px 7px',
+                          background: 'rgba(255,255,255,0.14)',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeDockMenu();
+                        }}
+                        style={{
+                          width: '100%',
+                          height: 32,
+                          padding: '0 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: 0,
+                          background: 'transparent',
+                          color: 'inherit',
+                          font: 'inherit',
+                          cursor: 'default',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Show Recents
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeDockMenu();
+                          if (app.id === 'launchpad') {
+                            onLaunchpadToggle?.();
+                            return;
+                          }
+                          openApp(app.id);
+                        }}
+                        style={{
+                          width: '100%',
+                          height: 32,
+                          padding: '0 18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: 0,
+                          background: 'transparent',
+                          color: 'inherit',
+                          font: 'inherit',
+                          cursor: 'default',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Open
+                      </button>
+                      <div
+                        aria-hidden
+                        style={{
+                          position: 'absolute',
+                          left: '50%',
+                          bottom: -14,
+                          width: 0,
+                          height: 0,
+                          transform: 'translateX(-50%)',
+                          borderLeft: '14px solid transparent',
+                          borderRight: '14px solid transparent',
+                          borderTop: '14px solid rgba(41, 46, 54, 0.96)',
+                          filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.18))',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* App name tooltip */}
                   <div
                     style={{
@@ -114,7 +331,7 @@ export function Dock() {
                       letterSpacing: 0.1,
                       whiteSpace: 'nowrap',
                       pointerEvents: 'none',
-                      opacity: isHovered ? 1 : 0,
+                      opacity: isHovered && !menuOpen ? 1 : 0,
                       transition: 'opacity 0.12s ease',
                       zIndex: 9999,
                       backdropFilter: 'blur(8px)',
@@ -128,16 +345,66 @@ export function Dock() {
 
                   <div
                     data-dock-index={i}
-                    onClick={() => openApp(app.id)}
+                    onPointerDown={(e) => {
+                      if (e.button !== 0) return;
+                      didLongPressRef.current = false;
+                      setPressedAppId(app.id);
+                      clearLongPressTimer();
+                      longPressTimerRef.current = window.setTimeout(() => openDockMenu(app.id), 1000);
+                    }}
+                    onPointerUp={(e) => {
+                      if (e.button !== 0) return;
+                      clearLongPressTimer();
+                      setPressedAppId(null);
+
+                      if (didLongPressRef.current) {
+                        didLongPressRef.current = false;
+                        return;
+                      }
+
+                      closeDockMenu();
+                      runDockAction(app.id);
+                    }}
+                    onPointerCancel={() => {
+                      clearLongPressTimer();
+                      setPressedAppId(null);
+                    }}
+                    onPointerLeave={() => {
+                      clearLongPressTimer();
+                      setPressedAppId(null);
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      clearLongPressTimer();
+                      setPressedAppId(null);
+                      openDockMenu(app.id, false);
+                    }}
                     title={app.name}
                     role="button"
                     tabIndex={0}
                     aria-label={`Open ${app.name}`}
-                    onKeyDown={(e) => e.key === 'Enter' && openApp(app.id)}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' && e.key !== ' ') return;
+                      e.preventDefault();
+                      if (app.id === 'launchpad') {
+                        onLaunchpadToggle?.();
+                        return;
+                      }
+                      closeDockMenu();
+                      runDockAction(app.id);
+                    }}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
+                      transform: app.id === 'launchpad' && launchpadOpen ? 'translateY(-2px)' : 'none',
+                      filter: isPressed
+                        ? 'brightness(0.58) saturate(0.95)'
+                        : app.id === 'launchpad' && launchpadOpen
+                          ? 'brightness(1.12)'
+                          : 'none',
+                      animation: isLaunching ? 'dock-bounce 0.65s ease' : 'none',
+                      transition: 'transform 0.16s ease, filter 0.16s ease',
                     }}
                   >
                     <AppIcon appId={app.id} size={ICON_BASE} />
@@ -150,9 +417,8 @@ export function Dock() {
                       height: 4,
                       borderRadius: '50%',
                       background: '#ffffff',
-                      opacity: open || minimized ? 0.7 : 0,
+                      opacity: (open || minimized) && !isLaunching ? 0.7 : 0,
                       transition: 'opacity 0.2s',
-                      animation: minimized ? 'dock-bounce 0.6s ease infinite' : 'none',
                     }}
                   />
                 </div>

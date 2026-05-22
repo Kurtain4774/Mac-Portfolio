@@ -1,0 +1,437 @@
+.finder-app {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(190px, 242px) minmax(0, 1fr);
+  overflow: hidden;
+  color: #e7eaed;
+  background: #1f2729;
+  font-family: var(--font-system);
+}
+
+.finder-sidebar {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(165deg, rgba(50, 87, 68, 0.86), rgba(21, 68, 72, 0.88) 52%, rgba(35, 45, 91, 0.9)),
+    rgba(39, 57, 64, 0.86);
+  border-right: 1px solid rgba(0, 0, 0, 0.72);
+  cursor: default;
+}
+
+.finder-traffic-lights {
+  height: 78px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  flex-shrink: 0;
+}
+
+.finder-traffic-light {
+  width: 13px;
+  height: 13px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.finder-traffic-light span {
+  opacity: 0;
+}
+
+.finder-traffic-light:hover span {
+  opacity: 1;
+}
+
+.finder-sidebar-scroll {
+  overflow: auto;
+  padding: 0 12px 22px;
+}
+
+.finder-sidebar-group {
+  margin: 14px 0 24px;
+}
+
+.finder-sidebar-heading {
+  margin: 0 10px 8px;
+  color: rgba(180, 195, 213, 0.55);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.finder-sidebar-item {
+  width: 100%;
+  height: 34px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #e9eef3;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.finder-sidebar-item svg {
+  color: #09a8ff;
+  stroke-width: 2.3;
+}
+
+.finder-sidebar-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-sidebar-item:hover,
+.finder-sidebar-item.is-active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.finder-sidebar-item.is-muted svg {
+  color: rgba(205, 213, 225, 0.72);
+}
+
+.finder-sidebar-item .tag-red {
+  fill: #ff5f57;
+  color: #ff5f57;
+}
+
+.finder-sidebar-item .tag-blue {
+  fill: #0a84ff;
+  color: #0a84ff;
+}
+
+.finder-warning {
+  justify-self: end;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(205, 218, 225, 0.45);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: rgba(222, 232, 238, 0.68);
+  font-size: 11px;
+}
+
+.finder-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1f2729;
+}
+
+.finder-toolbar {
+  height: 78px;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 82px minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px 0 22px;
+  background: #383d41;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.75);
+  cursor: default;
+}
+
+.finder-nav,
+.finder-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.finder-title {
+  min-width: 0;
+  margin: 0;
+  color: #f1f2f4;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 760;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-icon-button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #b8bec4;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.finder-icon-button:hover,
+.finder-icon-button.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e7eaed;
+}
+
+.finder-icon-button:disabled {
+  color: rgba(184, 190, 196, 0.32);
+  cursor: default;
+}
+
+.finder-icon-button:disabled:hover {
+  background: transparent;
+}
+
+.finder-search {
+  width: clamp(120px, 16vw, 170px);
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(18, 22, 24, 0.46);
+  color: #b8bec4;
+  padding: 0 9px;
+}
+
+.finder-search:focus-within {
+  border-color: rgba(10, 132, 255, 0.68);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.17);
+}
+
+.finder-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #edf0f2;
+  font: inherit;
+  font-size: 13px;
+}
+
+.finder-search input::placeholder {
+  color: rgba(213, 219, 225, 0.55);
+}
+
+.finder-search button {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #dbe1e6;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.finder-list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 0 10px 12px 10px;
+}
+
+.finder-column-header,
+.finder-row {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(130px, 230px) minmax(170px, 250px);
+  column-gap: 14px;
+  align-items: center;
+}
+
+.finder-column-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 44px;
+  color: rgba(218, 223, 228, 0.67);
+  background: #21282b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  padding: 0 16px 0 74px;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.finder-kind-col,
+.finder-date-col {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-group {
+  padding-top: 14px;
+}
+
+.finder-group h2 {
+  margin: 20px 0 10px 64px;
+  color: rgba(222, 228, 233, 0.68);
+  font-size: 14px;
+  font-weight: 780;
+}
+
+.finder-row {
+  width: 100%;
+  min-height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(232, 235, 238, 0.76);
+  padding: 0 16px 0 34px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+  cursor: default;
+}
+
+.finder-row:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.finder-row:nth-of-type(even):not(.is-selected) {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.finder-row.is-selected {
+  background: #075fd1;
+  color: #ffffff;
+}
+
+.finder-row .finder-name-col {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.finder-row-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finder-file-glyph {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  object-fit: contain;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.finder-file-glyph.is-small {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+}
+
+.finder-file-glyph.is-generic {
+  border-radius: 4px;
+  color: #dfe8ef;
+  background: linear-gradient(180deg, #4a97e6, #1464bd);
+}
+
+.finder-file-glyph.is-folder {
+  color: #fff8d6;
+  background: linear-gradient(180deg, #63b7ff, #1774db);
+}
+
+.finder-empty {
+  height: 100%;
+  min-height: 220px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  color: rgba(219, 225, 231, 0.5);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.finder-pathbar {
+  min-height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.065);
+  background: rgba(45, 53, 56, 0.92);
+  color: rgba(219, 225, 231, 0.68);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.finder-pathbar span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .finder-app {
+    grid-template-columns: 168px minmax(0, 1fr);
+  }
+
+  .finder-toolbar {
+    grid-template-columns: 70px minmax(80px, 1fr);
+    grid-template-rows: 38px 34px;
+    height: 92px;
+    gap: 4px 8px;
+    padding: 8px 12px;
+  }
+
+  .finder-title {
+    font-size: 17px;
+  }
+
+  .finder-toolbar-actions {
+    grid-column: 1 / -1;
+  }
+
+  .finder-toolbar-actions .finder-icon-button:nth-of-type(n + 4) {
+    display: none;
+  }
+
+  .finder-search {
+    width: 100%;
+    margin-left: auto;
+  }
+
+  .finder-column-header,
+  .finder-row {
+    grid-template-columns: minmax(160px, 1fr) minmax(110px, 150px);
+  }
+
+  .finder-date-col {
+    display: none;
+  }
+}

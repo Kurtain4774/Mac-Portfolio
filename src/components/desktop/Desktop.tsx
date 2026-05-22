@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { MenuBar } from './MenuBar';
 import { DesktopGrid } from './DesktopGrid';
 import { Dock } from './Dock';
+import { LaunchpadOverlay } from './LaunchpadOverlay';
 import { Window } from '../window/Window';
 import { useWindowStore } from '../../stores/windowStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -64,12 +66,18 @@ function NightStars() {
 export function Desktop() {
   useWindowManager();
   const windows = useWindowStore(s => s.windows);
+  const openApp = useWindowStore(s => s.openApp);
   const { wallpaper, isDark } = useThemeStore();
   const { onboardingShown, setOnboardingShown } = useBootStore();
   const { timeOfDay } = useTimeOfDay();
   const onboardingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [launchpadOpen, setLaunchpadOpen] = useState(false);
 
   const bg = wallpaper === 'dynamic' ? getWallpaperGradient(timeOfDay) : WALLPAPER_MAP[wallpaper];
+
+  const openLaunchpadApp = useCallback((appId: Parameters<typeof openApp>[0]) => {
+    openApp(appId);
+  }, [openApp]);
 
   useEffect(() => {
     if (!onboardingShown) {
@@ -117,7 +125,19 @@ export function Desktop() {
       </div>
 
       <DesktopGrid />
-      <Dock />
+      <AnimatePresence>
+        {launchpadOpen && (
+          <LaunchpadOverlay
+            onClose={() => setLaunchpadOpen(false)}
+            onOpenApp={openLaunchpadApp}
+          />
+        )}
+      </AnimatePresence>
+
+      <Dock
+        launchpadOpen={launchpadOpen}
+        onLaunchpadToggle={() => setLaunchpadOpen(open => !open)}
+      />
 
       {!onboardingShown && (
         <div
