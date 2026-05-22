@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/MacPortfolio/)",
+      "Bash(npx playwright *)",
+      "Bash(npx playwright@1.60.0 --version)",
+      "Bash(npx --yes playwright install chromium)",
+      "Bash(node verify_portfolio.mjs)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Kurtis\\\\Desktop\\\\web dev\\\\MacPortfolio\\\\src\" -Recurse -Include \"*icon*\" -Force)"
+    ]
+  }
+}

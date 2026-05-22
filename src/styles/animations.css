@@ -1,0 +1,36 @@
+/* Dock dot indicator */
+@keyframes dock-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.dock-dot--bounce {
+  animation: dock-bounce 0.6s ease infinite;
+}
+
+/* Night star drift */
+@keyframes star-drift {
+  0% { transform: translateY(0) translateX(0); opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(-20px) translateX(10px); opacity: 0.4; }
+}
+
+/* Boot progress */
+@keyframes progress-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* Onboarding tooltip fade */
+@keyframes tooltip-fade {
+  0% { opacity: 0; transform: translateY(8px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.onboarding-tooltip {
+  animation: tooltip-fade 3.5s ease forwards;
+}
+
+/* Mobile slide transitions are handled by framer-motion */
