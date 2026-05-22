@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Fragment } from 'react';
+import { useEffect, useRef, useState, Fragment, type CSSProperties, type ReactNode } from 'react';
 import { useWindowStore } from '../../stores/windowStore';
 import { useTrashStore } from '../../stores/trashStore';
 import { useDragStore } from '../../stores/dragStore';
@@ -10,6 +10,9 @@ import trashEmptyIcon from '../../assets/icons/trash_empty_256x256x32.png';
 import trashFullIcon from '../../assets/icons/trash_full_256x256x32.png';
 
 const ICON_BASE = 56;
+
+type DockMenuState = { kind: 'app'; appId: AppId } | { kind: 'trash' };
+type PressedDockItem = AppId | 'trash';
 
 interface DockProps {
   launchpadOpen?: boolean;
@@ -40,6 +43,118 @@ function TrashBinIcon({ hasItems, isOver }: { hasItems: boolean; isOver: boolean
   );
 }
 
+function DockMenuItem({
+  children,
+  onClick,
+  style,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  style: CSSProperties;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      style={{
+        ...style,
+        background: hovered ? 'rgba(255,255,255,0.13)' : 'transparent',
+        color: hovered ? '#ffffff' : '#eeeaf7',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DockMenu({
+  label,
+  onOptions,
+  onOpen,
+}: {
+  label: string;
+  onOptions: () => void;
+  onOpen: () => void;
+}) {
+  const menuStyle: CSSProperties = {
+    position: 'absolute',
+    left: '50%',
+    bottom: 'calc(100% + 16px)',
+    width: 210,
+    transform: 'translateX(-50%)',
+    padding: '4px 0',
+    borderRadius: 8,
+    background: 'linear-gradient(145deg, rgba(45,27,94,0.82), rgba(34,18,76,0.78))',
+    backdropFilter: 'blur(34px) saturate(1.45)',
+    WebkitBackdropFilter: 'blur(34px) saturate(1.45)',
+    border: '1px solid rgba(232,221,255,0.28)',
+    boxShadow: '0 24px 80px rgba(18,7,44,0.58), inset 0 1px 0 rgba(255,255,255,0.15)',
+    color: '#eeeaf7',
+    fontFamily: 'var(--font-system)',
+    fontSize: 13,
+    fontWeight: 600,
+    lineHeight: 1,
+    zIndex: 10000,
+    overflow: 'hidden',
+    boxSizing: 'border-box',
+  };
+
+  const itemStyle: CSSProperties = {
+    minHeight: 24,
+    width: 'calc(100% - 8px)',
+    margin: '0 4px',
+    padding: '3px 8px',
+    border: 0,
+    borderRadius: 5,
+    background: 'transparent',
+    color: '#eeeaf7',
+    font: 'inherit',
+    cursor: 'default',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    textAlign: 'left',
+    userSelect: 'none',
+  };
+
+  return (
+    <div role="menu" aria-label={label} className="dock-context-menu" style={menuStyle}>
+      <DockMenuItem onClick={onOptions} style={itemStyle}>
+        <span>Options</span>
+        <span style={{ fontSize: 18, lineHeight: 1, opacity: 0.95 }}>&gt;</span>
+      </DockMenuItem>
+      <DockMenuItem onClick={onOpen} style={itemStyle}>
+        Open
+      </DockMenuItem>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: -11,
+          width: 0,
+          height: 0,
+          transform: 'translateX(-50%)',
+          borderLeft: '11px solid transparent',
+          borderRight: '11px solid transparent',
+          borderTop: '11px solid rgba(34,18,76,0.78)',
+          filter: 'drop-shadow(0 1px 0 rgba(232,221,255,0.20))',
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
+  );
+}
+
 export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
   const windows = useWindowStore(s => s.windows);
   const openApp = useWindowStore(s => s.openApp);
@@ -51,9 +166,9 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
   const didLongPressRef = useRef(false);
   const launchTimerRefs = useRef<Partial<Record<AppId, number>>>({});
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [pressedAppId, setPressedAppId] = useState<AppId | null>(null);
+  const [pressedDockItem, setPressedDockItem] = useState<PressedDockItem | null>(null);
   const [launchingAppIds, setLaunchingAppIds] = useState<AppId[]>([]);
-  const [dockMenu, setDockMenu] = useState<{ appId: AppId } | null>(null);
+  const [dockMenu, setDockMenu] = useState<DockMenuState | null>(null);
   const [trashHovered, setTrashHovered] = useState(false);
   const [trashOpen, setTrashOpen] = useState(false);
 
@@ -69,8 +184,14 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
 
   const openDockMenu = (appId: AppId, suppressNextClick = true) => {
     didLongPressRef.current = suppressNextClick;
-    setPressedAppId(null);
-    setDockMenu({ appId });
+    setPressedDockItem(null);
+    setDockMenu({ kind: 'app', appId });
+  };
+
+  const openTrashMenu = (suppressNextClick = true) => {
+    didLongPressRef.current = suppressNextClick;
+    setPressedDockItem(null);
+    setDockMenu({ kind: 'trash' });
   };
 
   const closeDockMenu = () => {
@@ -165,9 +286,9 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
               const open = isOpen(app.id);
               const minimized = isMinimized(app.id);
               const isHovered = hoveredIndex === i;
-              const isPressed = pressedAppId === app.id;
+              const isPressed = pressedDockItem === app.id;
               const isLaunching = launchingAppIds.includes(app.id);
-              const menuOpen = dockMenu?.appId === app.id;
+              const menuOpen = dockMenu?.kind === 'app' && dockMenu.appId === app.id;
 
               return (
                 <div
@@ -185,133 +306,18 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
                   {menuOpen && (
-                    <div
-                      role="menu"
-                      aria-label={`${app.name} Dock menu`}
-                      style={{
-                        position: 'absolute',
-                        left: '50%',
-                        bottom: 'calc(100% + 16px)',
-                        width: 220,
-                        transform: 'translateX(-50%)',
-                        padding: '7px 0',
-                        borderRadius: 8,
-                        background: 'rgba(41, 46, 54, 0.96)',
-                        border: '1px solid rgba(255,255,255,0.22)',
-                        boxShadow: '0 14px 30px rgba(0,0,0,0.34), inset 0 1px rgba(255,255,255,0.08)',
-                        color: 'rgba(255,255,255,0.88)',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-                        fontSize: 18,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        zIndex: 10000,
-                        backdropFilter: 'blur(22px)',
-                        WebkitBackdropFilter: 'blur(22px)',
+                    <DockMenu
+                      label={`${app.name} Dock menu`}
+                      onOptions={closeDockMenu}
+                      onOpen={() => {
+                        closeDockMenu();
+                        if (app.id === 'launchpad') {
+                          onLaunchpadToggle?.();
+                          return;
+                        }
+                        openApp(app.id);
                       }}
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeDockMenu();
-                        }}
-                        style={{
-                          width: '100%',
-                          height: 36,
-                          padding: '0 18px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          border: 0,
-                          background: 'transparent',
-                          color: 'inherit',
-                          font: 'inherit',
-                          cursor: 'default',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <span>Options</span>
-                        <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 0.8 }}>&gt;</span>
-                      </button>
-                      <div
-                        style={{
-                          height: 1,
-                          margin: '0 18px 7px',
-                          background: 'rgba(255,255,255,0.14)',
-                        }}
-                      />
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeDockMenu();
-                        }}
-                        style={{
-                          width: '100%',
-                          height: 32,
-                          padding: '0 18px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          border: 0,
-                          background: 'transparent',
-                          color: 'inherit',
-                          font: 'inherit',
-                          cursor: 'default',
-                          textAlign: 'left',
-                        }}
-                      >
-                        Show Recents
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeDockMenu();
-                          if (app.id === 'launchpad') {
-                            onLaunchpadToggle?.();
-                            return;
-                          }
-                          openApp(app.id);
-                        }}
-                        style={{
-                          width: '100%',
-                          height: 32,
-                          padding: '0 18px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          border: 0,
-                          background: 'transparent',
-                          color: 'inherit',
-                          font: 'inherit',
-                          cursor: 'default',
-                          textAlign: 'left',
-                        }}
-                      >
-                        Open
-                      </button>
-                      <div
-                        aria-hidden
-                        style={{
-                          position: 'absolute',
-                          left: '50%',
-                          bottom: -14,
-                          width: 0,
-                          height: 0,
-                          transform: 'translateX(-50%)',
-                          borderLeft: '14px solid transparent',
-                          borderRight: '14px solid transparent',
-                          borderTop: '14px solid rgba(41, 46, 54, 0.96)',
-                          filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.18))',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </div>
+                    />
                   )}
 
                   {/* App name tooltip */}
@@ -348,14 +354,14 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
                     onPointerDown={(e) => {
                       if (e.button !== 0) return;
                       didLongPressRef.current = false;
-                      setPressedAppId(app.id);
+                      setPressedDockItem(app.id);
                       clearLongPressTimer();
                       longPressTimerRef.current = window.setTimeout(() => openDockMenu(app.id), 1000);
                     }}
                     onPointerUp={(e) => {
                       if (e.button !== 0) return;
                       clearLongPressTimer();
-                      setPressedAppId(null);
+                      setPressedDockItem(null);
 
                       if (didLongPressRef.current) {
                         didLongPressRef.current = false;
@@ -367,16 +373,16 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
                     }}
                     onPointerCancel={() => {
                       clearLongPressTimer();
-                      setPressedAppId(null);
+                      setPressedDockItem(null);
                     }}
                     onPointerLeave={() => {
                       clearLongPressTimer();
-                      setPressedAppId(null);
+                      setPressedDockItem(null);
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       clearLongPressTimer();
-                      setPressedAppId(null);
+                      setPressedDockItem(null);
                       openDockMenu(app.id, false);
                     }}
                     title={app.name}
@@ -449,8 +455,18 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
             }}
             onMouseEnter={() => setTrashHovered(true)}
             onMouseLeave={() => setTrashHovered(false)}
-            onClick={() => setTrashOpen(v => !v)}
           >
+            {dockMenu?.kind === 'trash' && (
+              <DockMenu
+                label="Trash Dock menu"
+                onOptions={closeDockMenu}
+                onOpen={() => {
+                  closeDockMenu();
+                  setTrashOpen(true);
+                }}
+              />
+            )}
+
             {/* Trash tooltip */}
             <div
               style={{
@@ -482,12 +498,57 @@ export function Dock({ launchpadOpen = false, onLaunchpadToggle }: DockProps) {
 
             <div
               data-trash-bin
+              role="button"
+              tabIndex={0}
+              aria-label="Open Trash"
+              title="Trash"
+              onPointerDown={(e) => {
+                if (e.button !== 0) return;
+                didLongPressRef.current = false;
+                setPressedDockItem('trash');
+                clearLongPressTimer();
+                longPressTimerRef.current = window.setTimeout(() => openTrashMenu(), 1000);
+              }}
+              onPointerUp={(e) => {
+                if (e.button !== 0) return;
+                clearLongPressTimer();
+                setPressedDockItem(null);
+
+                if (didLongPressRef.current) {
+                  didLongPressRef.current = false;
+                  return;
+                }
+
+                closeDockMenu();
+                setTrashOpen(v => !v);
+              }}
+              onPointerCancel={() => {
+                clearLongPressTimer();
+                setPressedDockItem(null);
+              }}
+              onPointerLeave={() => {
+                clearLongPressTimer();
+                setPressedDockItem(null);
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                clearLongPressTimer();
+                setPressedDockItem(null);
+                openTrashMenu(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                closeDockMenu();
+                setTrashOpen(v => !v);
+              }}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 borderRadius: '24%',
                 outline: isDraggingIcon ? '2px solid rgba(255,100,100,0.7)' : '2px solid transparent',
+                filter: pressedDockItem === 'trash' ? 'brightness(0.58) saturate(0.95)' : 'none',
                 transition: 'outline-color 0.15s',
               }}
             >

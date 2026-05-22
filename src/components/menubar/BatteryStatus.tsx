@@ -1,16 +1,78 @@
 import { useState } from 'react';
-import { BatteryCharging, Battery } from 'lucide-react';
-import { MenuBarMenu, MenuItem, MenuSeparator } from './MenuBarMenu';
+import { Zap } from 'lucide-react';
+import { MenuBarMenu } from './MenuBarMenu';
 import { useBattery } from '../../hooks/useBattery';
+
+function MenuBarBatteryIcon({ pct, charging }: { pct: number; charging: boolean }) {
+  const fillWidth = Math.max(5, Math.min(22, Math.round((pct / 100) * 22)));
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 31,
+        height: 18,
+        display: 'inline-flex',
+        alignItems: 'center',
+        position: 'relative',
+      }}
+    >
+      <span
+        style={{
+          width: 25,
+          height: 14,
+          border: '2px solid rgba(255,255,255,0.92)',
+          borderRadius: 5,
+          position: 'relative',
+          boxSizing: 'border-box',
+          display: 'flex',
+          alignItems: 'center',
+          padding: 2,
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.16)',
+        }}
+      >
+        <span
+          style={{
+            width: fillWidth,
+            maxWidth: '100%',
+            height: 6,
+            borderRadius: 3,
+            background: 'rgba(255,255,255,0.86)',
+            opacity: pct <= 20 ? 0.55 : 1,
+          }}
+        />
+      </span>
+      <span
+        style={{
+          width: 3,
+          height: 8,
+          borderRadius: '0 2px 2px 0',
+          background: 'rgba(255,255,255,0.82)',
+          marginLeft: 2,
+        }}
+      />
+      {charging && (
+        <Zap
+          size={16}
+          strokeWidth={2.6}
+          style={{
+            position: 'absolute',
+            left: 6,
+            top: 1,
+            color: '#e9f1ff',
+            filter: 'drop-shadow(0 1px 1px rgba(18,40,106,0.35))',
+          }}
+        />
+      )}
+    </span>
+  );
+}
 
 export function BatteryStatus() {
   const [open, setOpen] = useState(false);
-  const { level, charging, supported } = useBattery();
+  const { level, charging } = useBattery();
 
   const pct = Math.round(level * 100);
-
-  // Icon fill ratio for the battery body
-  const fillW = Math.round(pct * 0.6); // 0–60% of a 60px-wide bar
 
   return (
     <MenuBarMenu
@@ -18,61 +80,41 @@ export function BatteryStatus() {
       onOpenChange={setOpen}
       align="right"
       minWidth={180}
-      label={
-        <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-          {charging ? <BatteryCharging size={14} /> : <Battery size={14} />}
-          <span style={{ fontSize: 12 }}>{pct}%</span>
-        </span>
-      }
+      label={<MenuBarBatteryIcon pct={pct} charging={charging} />}
     >
-      <div style={{ padding: '8px 14px 4px', userSelect: 'none' }}>
-        {/* Battery bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <div style={{
-            width: 60,
-            height: 22,
-            border: '1.5px solid var(--color-text-secondary)',
-            borderRadius: 3,
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            overflow: 'hidden',
-          }}>
-            {/* Terminal nub */}
-            <div style={{
-              position: 'absolute',
-              right: -5,
-              width: 4,
-              height: 8,
-              background: 'var(--color-text-secondary)',
-              borderRadius: '0 1px 1px 0',
-            }} />
-            {/* Fill */}
-            <div style={{
-              width: `${pct}%`,
-              height: '100%',
-              background: pct <= 20 ? '#ff3b30' : charging ? '#30d158' : 'var(--color-text-primary)',
-              borderRadius: 2,
-              transition: 'width 0.3s',
-            }} />
-          </div>
-          <span style={{ fontSize: 22, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {pct}%
-          </span>
-        </div>
-
-        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-          {charging ? '⚡ Charging' : pct <= 20 ? '⚠️ Low Battery' : 'On Battery Power'}
-        </div>
-        {!supported && (
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-            (Battery API not supported in this browser)
-          </div>
-        )}
+      <div
+        style={{
+          minHeight: 42,
+          padding: '8px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 24,
+          userSelect: 'none',
+          boxSizing: 'border-box',
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            lineHeight: 1,
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          Battery
+        </span>
+        <span
+          style={{
+            fontSize: 18,
+            lineHeight: 1,
+            fontWeight: 600,
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          {pct}%
+        </span>
       </div>
-      <MenuSeparator />
-      <MenuItem label="Show in Menu Bar" checked disabled />
-      <MenuItem label="Battery Preferences…" disabled />
     </MenuBarMenu>
   );
 }

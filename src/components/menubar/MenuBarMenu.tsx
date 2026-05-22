@@ -224,6 +224,7 @@ export function MenuBarMenu({
         style={{
           background: open ? 'rgba(255,255,255,0.15)' : 'transparent',
           border: 'none',
+          outline: 'none',
           cursor: 'default',
           color: 'rgba(255,255,255,0.94)',
           fontSize: 13,
